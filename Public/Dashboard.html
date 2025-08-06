@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="">
+  <meta name="author" content="">
+  <link rel="icon" href="https://getbootstrap.com/docs/4.0/assets/img/favicons/favicon.ico">
+  <title>Skyring-Monitor</title>
+  <link rel="canonical" href="https://getbootstrap.com/docs/4.0/examples/dashboard/">
+  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://getbootstrap.com/docs/4.0/examples/dashboard/dashboard.css" rel="stylesheet">
+
+  <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
+  <!-- Three.js -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.164.1/examples/js/controls/OrbitControls.js"></script>
+
+  <style>
+    #windRose { max-height: 160px; }
+    #myChart { max-height: 300px; }
+
+    .navbar { background-color: #004e7c !important; }
+    .form-control-dark {
+      background-color: rgba(173, 216, 230, 0.3);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.5);
+    }
+    .form-control-dark::placeholder { color: #eee; }
+    .sidebar { background-color: #e0f7fa !important; }
+
+    #buoyCanvas { width: 100% !important; height: 100% !important; display: block; }
+
+    /* Popups container */
+    #popups-container {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none; z-index: 10;
+    }
+    .popup {
+      position: absolute; background: rgba(255,255,255,0.85);
+      border-radius: 12px; padding: 12px 16px; box-shadow: 0 4px 8px rgba(0,0,0,0.25);
+      font-size: 14px; color: #001D3D; max-width: 140px; pointer-events: auto;
+      user-select: none; font-weight: bold;
+    }
+
+    #chart1, #chart2, #chart3 {
+      background-color: rgba(30, 30, 30, 0.8);
+      border-radius: 8px;
+      padding: 10px;
+    }
+
+    /* HUD */
+    #buoyContainer { position: relative; }
+    #dashboard.hud {
+      position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+      display: flex; gap: 12px; z-index: 20; pointer-events: none;
+    }
+    #dashboard .card {
+      pointer-events: auto; display: flex; flex-direction: column; align-items: center;
+      width: 96px; padding: 8px 12px; border-radius: 10px;
+      color: #fff; text-shadow: 0 1px 1px rgba(0,0,0,.25);
+      background: rgba(255,255,255,0.10); backdrop-filter: blur(6px) saturate(120%);
+      -webkit-backdrop-filter: blur(6px) saturate(120%); border: 1px solid rgba(255,255,255,0.18);
+      box-shadow: 0 4px 14px rgba(0,0,0,.18);
+    }
+    #dashboard .icon { font-size: 16px; margin-bottom: 4px; opacity: .95; }
+    #dashboard .num  { font-weight: 800; font-size: 16px; line-height: 1.1; }
+    #dashboard .label{ font-size: 11px; opacity: .9; }
+    #dashboard .blue  { background: rgba(33,150,243,0.35); }
+    #dashboard .red   { background: rgba(244, 67, 54,0.35); }
+    #dashboard .green { background: rgba( 76,175, 80,0.35); }
+    #dashboard .cyan  { background: rgba(  0,188,212,0.35); }
+  </style>
+</head>
+<body>
+<nav class="navbar navbar-dark sticky-top flex-md-nowrap p-0">
+  <a class="navbar-brand col-sm-3 col-md-2 mr-0" href="#">Skyring</a>
+  <input class="form-control form-control-dark w-100" type="text" placeholder="Search">
+  <ul class="navbar-nav px-3">
+    <li class="nav-item text-nowrap">
+      <a class="nav-link" href="#">Sign out</a>
+    </li>
+  </ul>
+</nav>
+
+<div class="container-fluid">
+  <div class="row">
+    <nav class="col-md-2 d-none d-md-block sidebar">
+      <div class="sidebar-sticky">
+        <ul class="nav flex-column">
+          <li class="nav-item"><a class="nav-link active" href="#">Dashboard</a></li>
+          <li class="nav-item"><a class="nav-link" href="#">Registros</a></li>
+          <li class="nav-item"><a class="nav-link" href="#">Usuarios</a></li>
+          <li class="nav-item"><a class="nav-link" href="#">Series de Tiempo</a></li>
+          <li class="nav-item"><a class="nav-link" href="#">Alarmas</a></li>
+        </ul>
+        <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+          <span>Reportes</span>
+        </h6>
+        <ul class="nav flex-column mb-2">
+          <li class="nav-item"><a class="nav-link" href="#">Últimos 3 días</a></li>
+          <li class="nav-item"><a class="nav-link" href="#">Semanal</a></li>
+          <li class="nav-item"><a class="nav-link" href="#">Mensual</a></li>
+        </ul>
+        <div class="text-center mt-5 mb-3">
+          <img src="images/logo2.png" alt="Logo PMEJ" style="max-width: 80%; height: auto;">
+        </div>
+      </div>
+    </nav>
+
+    <main role="main" class="col-md-9 ml-sm-auto col-lg-10 pt-3 px-4">
+      <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
+        <h1 class="h2">Dashboard</h1>
+      </div>
+
+      <div class="d-flex" style="width: 100%; height: calc(100vh - 150px);">
+        <!-- Izquierda: Buoy3D -->
+        <div id="buoyContainer" style="width: 50%; padding-right: 20px; height: 100%;">
+          <div id="dashboard" class="hud">
+            <div class="card blue"><div class="icon">🛠️</div><div class="num">12</div><div class="label">Filtros</div></div>
+            <div class="card red"><div class="icon">💳</div><div class="num">599</div><div class="label">Instancias</div></div>
+            <div class="card green"><div class="icon">💽</div><div class="num">6875</div><div class="label">Datos</div></div>
+            <div class="card cyan"><div class="icon">👥</div><div class="num">35</div><div class="label">Usuarios</div></div>
+          </div>
+        </div>
+
+        <!-- Derecha: Charts -->
+        <div class="d-flex flex-column" style="width: 50%; height: 100%; gap: 0;">
+          <canvas id="chart1" style="height: 33%; margin-bottom: 0;"></canvas>
+          <canvas id="chart2" style="height: 33%; margin-bottom: 0;"></canvas>
+          <canvas id="chart3" style="height: 34%; margin-bottom: 0;"></canvas>
+        </div>
+      </div>
+
+      <h2 class="mt-4">Últimos Registros</h2>
+      <div class="table-responsive">
+        <table class="table table-striped table-sm" id="tabla-registros">
+          <thead>
+            <tr>
+              <th>N°</th>
+              <th>Fecha</th>
+              <th>Hora</th>
+              <th>Hs (m)</th>
+              <th>Tp (s)</th>
+              <th>Dir (°)</th>
+              <th>Dep (m)</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div id="pagination-controls" style="margin-top: 10px; display: flex; align-items: center; gap: 10px;">
+        <button id="prevPage" disabled>Anterior</button>
+        <span id="pageInfo">Página 1</span>
+        <button id="nextPage" disabled>Siguiente</button>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script>
+  // =========================
+  //  CHARTS
+  // =========================
+  let chart1, chart2, chart3;
+
+  function initCharts() {
+    chart1 = new Chart(document.getElementById('chart1'), {
+      type: 'line',
+      data: {
+        labels: ["14:00","14:05","14:10","14:15","14:20","14:25","14:30","14:35","14:40","14:45","14:50"],
+        datasets: [{ label: "HS (M)", data: Array(11).fill(0),
+          borderColor: "#007bff", backgroundColor: "rgba(0,123,255,0.2)", tension: 0.4, fill: true }]
+      },
+      options: baseChartOptions('ALTURA DE OLA SIGNIFICATIVA HS (M)')
+    });
+
+    chart2 = new Chart(document.getElementById('chart2'), {
+      type: 'line',
+      data: {
+        labels: ["14:00","14:05","14:10","14:15","14:20","14:25","14:30","14:35","14:40","14:45","14:50"],
+        datasets: [{ label: "PERIODO PEAK (S)", data: Array(11).fill(0),
+          borderColor: "#28a745", backgroundColor: "rgba(40,167,69,0.2)", tension: 0.4, fill: true }]
+      },
+      options: baseChartOptions('PERIODO PEAK (S)')
+    });
+
+    chart3 = new Chart(document.getElementById('chart3'), {
+      type: 'line',
+      data: {
+        labels: ["14:00","14:05","14:10","14:15","14:20","14:25","14:30","14:35","14:40","14:45","14:50"],
+        datasets: [{ label: "ALTURA DE MAREA (M)", data: Array(11).fill(0),
+          borderColor: "#dc3545", backgroundColor: "rgba(220,53,69,0.2)", tension: 0.4, fill: true }]
+      },
+      options: baseChartOptions('ALTURA DE MAREA (M NRS)')
+    });
+  }
+
+  function baseChartOptions(title) {
+    return {
+      responsive: true,
+      plugins: { legend: { display: false }, title: { display: true, text: title, font: { size: 16, weight: 'bold' }, color: '#fff' } },
+      scales: {
+        y: { beginAtZero: true, min: 0, ticks: { color: '#eee' }, grid: { color: 'rgba(255,255,255,0.1)' } },
+        x: { ticks: { color: '#eee' }, grid: { color: 'rgba(255,255,255,0.1)' } }
+      }
+    };
+  }
+
+  function actualizarGraficos(labels, dataHs, dataTp, dataDepth) {
+    chart1.data.labels = labels; chart1.data.datasets[0].data = dataHs; chart1.update();
+    chart2.data.labels = labels; chart2.data.datasets[0].data = dataTp; chart2.update();
+    chart3.data.labels = labels; chart3.data.datasets[0].data = dataDepth; chart3.update();
+  }
+
+  // =========================
+  //  THREE.JS - ESCENA
+  // =========================
+  let isMouseDown = false, mouseX = 0, mouseY = 0, targetRotationX = 0, targetRotationY = 0;
+  const container = document.getElementById('buoyContainer');
+  if (getComputedStyle(container).position === 'static') container.style.position = 'relative';
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x001D3D);
+
+  const camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 1000);
+  camera.position.set(5, 3, 7);
+  camera.lookAt(0, 0, 0);
+
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setSize(container.clientWidth, container.clientHeight);
+  container.appendChild(renderer.domElement);
+
+  const ambientLight = new THREE.AmbientLight(0x404040, 1);
+  scene.add(ambientLight);
+  const directionalLight = new THREE.DirectionalLight(0x70aaff, 0.5);
+  directionalLight.position.set(0, 1, 1);
+  scene.add(directionalLight);
+
+  // Fondo y agua
+  const oceanFloor = new THREE.Mesh(
+    new THREE.PlaneGeometry(7, 7, 4, 4),
+    new THREE.MeshPhongMaterial({ color: 0x003050, side: THREE.DoubleSide, shininess: 10 })
+  );
+  oceanFloor.rotation.x = -Math.PI / 2;
+  oceanFloor.position.y = -3;
+  scene.add(oceanFloor);
+
+  const waterGeometry = new THREE.PlaneGeometry(6, 6, 20, 20);
+  const waterMaterial = new THREE.MeshPhongMaterial({
+    color: 0x1E90FF, transparent: true, opacity: 0.6, side: THREE.DoubleSide, shininess: 100, flatShading: true
+  });
+  const water = new THREE.Mesh(waterGeometry, waterMaterial);
+  water.rotation.x = -Math.PI / 2;
+  water.position.y = 3;
+  scene.add(water);
+
+  // === Marca de Norte (N) con Sprite 2D ===
+  let northSprite;
+  function addNorthMarker() {
+    const size = 256;
+    const cvs = document.createElement('canvas');
+    const ctx = cvs.getContext('2d');
+    cvs.width = cvs.height = size;
+    ctx.clearRect(0, 0, size, size);
+    ctx.font = 'bold 180px Helvetica, Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.shadowColor = 'rgba(0,0,0,0.4)';
+    ctx.shadowBlur = 8;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 2;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText('N', size / 2, size / 2);
+    const tex = new THREE.CanvasTexture(cvs);
+    tex.needsUpdate = true;
+    const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false });
+    northSprite = new THREE.Sprite(mat);
+    const worldScale = 1.2;
+    northSprite.scale.set(worldScale, worldScale, 1);
+    northSprite.position.set(0, 0, -3.4);
+    scene.add(northSprite);
+  }
+  addNorthMarker();
+
+  // Burbujas
+  const bubbleCount = 50;
+  const bubblesGeometry = new THREE.BufferGeometry();
+  const positions = new Float32Array(bubbleCount * 3);
+  for (let i = 0; i < bubbleCount; i++) {
+    positions[i * 3] = (Math.random() - 0.5) * 6;
+    positions[i * 3 + 1] = (Math.random() - 0.5) * 6;
+    positions[i * 3 + 2] = (Math.random() - 0.5) * 6;
+  }
+  bubblesGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  const bubblesMaterial = new THREE.PointsMaterial({ color: 0xA0C8FF, size: 0.05, transparent: true, opacity: 0.3, depthWrite: false });
+  const bubbles = new THREE.Points(bubblesGeometry, bubblesMaterial);
+  scene.add(bubbles);
+
+  // Boya
+  const buoyGroup = new THREE.Group();
+  const sphere = new THREE.Mesh(new THREE.SphereGeometry(0.5, 32, 32), new THREE.MeshPhongMaterial({ color: 0xff4444 }));
+  sphere.position.y = 0.5; buoyGroup.add(sphere);
+  const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 5.7, 16), new THREE.MeshPhongMaterial({ color: 0xffff00 }));
+  mast.position.y = 2.85; buoyGroup.add(mast);
+
+  // Grupos para flechas y discos
+  const arrowsGroup = new THREE.Group();
+  const disksGroup  = new THREE.Group();
+  buoyGroup.add(arrowsGroup);
+  buoyGroup.add(disksGroup);
+
+  // Posición de la boya en escena
+  buoyGroup.position.y = -3;
+  scene.add(buoyGroup);
+
+  // Contenedor HUD (rosa y otros overlays)
+  const indicatorsContainer = document.createElement('div');
+  indicatorsContainer.style.position = 'absolute';
+  indicatorsContainer.style.top = '0';
+  indicatorsContainer.style.left = '0';
+  indicatorsContainer.style.width = '100%';
+  indicatorsContainer.style.height = '100%';
+  indicatorsContainer.style.pointerEvents = 'none';
+  container.appendChild(indicatorsContainer);
+
+  // === HUD 2D: Rosa de vientos ============================
+  let roseHud, roseCanvas, roseCtx;
+
+  function createRoseHud() {
+    if (!roseHud) {
+      roseHud = document.createElement('div');
+      roseHud.id = 'roseHud';
+      Object.assign(roseHud.style, {
+        position: 'absolute',
+        bottom: '12px',
+        left: '12px',
+        width: '160px',
+        height: '160px',
+        borderRadius: '12px',
+        background: 'rgba(0, 29, 61, 0.65)',
+        boxShadow: '0 6px 20px rgba(0,0,0,0.35) inset, 0 4px 10px rgba(0,0,0,0.25)',
+        backdropFilter: 'blur(2px)',
+        pointerEvents: 'none',
+        overflow: 'hidden'
+      });
+
+      roseCanvas = document.createElement('canvas');
+      roseCanvas.id = 'roseCanvas';
+      roseCanvas.style.transformOrigin = '50% 50%';
+
+      roseHud.appendChild(roseCanvas);
+      container.appendChild(roseHud);
+
+      roseCtx = roseCanvas.getContext('2d');
+      resizeRoseCanvas();
+    }
+  }
+
+  function resizeRoseCanvas() {
+    if (!roseHud) return;
+    const dpr = window.devicePixelRatio || 1;
+    const w = roseHud.clientWidth;
+    const h = roseHud.clientHeight;
+    roseCanvas.width = Math.max(1, Math.floor(w * dpr));
+    roseCanvas.height = Math.max(1, Math.floor(h * dpr));
+    roseCanvas.style.width = w + 'px';
+    roseCanvas.style.height = h + 'px';
+    roseCtx.setTransform(1,0,0,1,0,0);
+    roseCtx.scale(dpr, dpr);
+  }
+
+  function drawRose(vectors) {
+    createRoseHud();
+    const W = roseHud.clientWidth, H = roseHud.clientHeight;
+    const cx = W / 2, cy = H / 2;
+    const R = Math.min(cx, cy) - 8;
+
+    roseCtx.clearRect(0,0,W,H);
+
+    for (let i = 5; i >= 1; i--) {
+      const r = (R * i) / 5;
+      roseCtx.beginPath();
+      roseCtx.arc(cx, cy, r, 0, Math.PI * 2);
+      roseCtx.fillStyle = `rgba(30, 90, 160, ${0.06 + (5 - i) * 0.05})`;
+      roseCtx.fill();
+    }
+
+    roseCtx.strokeStyle = 'rgba(255,255,255,0.15)';
+    roseCtx.lineWidth = 1;
+    [['N', -90], ['E', 0], ['S', 90], ['O', 180]].forEach(([, ang]) => {
+      const rad = ang * Math.PI / 180;
+      roseCtx.beginPath();
+      roseCtx.moveTo(cx, cy);
+      roseCtx.lineTo(cx + R * Math.cos(rad), cy + R * Math.sin(rad));
+      roseCtx.stroke();
+    });
+    roseCtx.font = 'bold 12px system-ui, -apple-system, Segoe UI, Roboto, Arial';
+    roseCtx.textAlign = 'center';
+    roseCtx.textBaseline = 'middle';
+    roseCtx.fillStyle = '#dfe9ff';
+    roseCtx.fillText('N', cx, cy - R + 10);
+    roseCtx.fillText('S', cx, cy + R - 10);
+    roseCtx.fillText('E', cx + R - 10, cy);
+    roseCtx.fillText('O', cx - R + 10, cy);
+
+    const MAG_TO_RADIUS = 0.9;
+    function drawArrow(rad, mag, colorHex) {
+      const color = '#' + colorHex.toString(16).padStart(6,'0');
+      const len = (mag > 0 ? Math.min(R*0.9, Math.max(R*0.15, mag * R * MAG_TO_RADIUS)) : R*0.12);
+      const x2 = cx + len * Math.cos(rad);
+      const y2 = cy + len * Math.sin(rad);
+
+      roseCtx.strokeStyle = color;
+      roseCtx.lineWidth = 3;
+      roseCtx.lineCap = 'round';
+      roseCtx.beginPath();
+      roseCtx.moveTo(cx, cy);
+      roseCtx.lineTo(x2, y2);
+      roseCtx.stroke();
+
+      const head = Math.min(16, len * 0.25);
+      const a = Math.atan2(y2 - cy, x2 - cx);
+      const left = a + Math.PI - 0.5;
+      const right = a + Math.PI + 0.5;
+      roseCtx.beginPath();
+      roseCtx.moveTo(x2, y2);
+      roseCtx.lineTo(x2 + head * Math.cos(left),  y2 + head * Math.sin(left));
+      roseCtx.lineTo(x2 + head * Math.cos(right), y2 + head * Math.sin(right));
+      roseCtx.closePath();
+      roseCtx.fillStyle = color;
+      roseCtx.fill();
+
+      roseCtx.beginPath();
+      roseCtx.arc(cx, cy, 3, 0, Math.PI*2);
+      roseCtx.fillStyle = 'rgba(255,255,255,0.8)';
+      roseCtx.fill();
+    }
+
+    vectors.forEach(v => {
+      const rad = (v.deg - 90) * Math.PI / 180;
+      drawArrow(rad, v.magnitude ?? 0, v.colorHex ?? 0xff0000);
+    });
+  }
+
+  function updateRoseFromArrowMeta() {
+    const vecs = arrowMeta.map((m, i) => ({
+      deg: m.azimuthDeg,
+      magnitude: m.magnitude,
+      colorHex: (i === 0) ? 0xff0000 : (i === 1 ? 0xffa500 : 0x00ff00)
+    }));
+    drawRose(vecs);
+    updateRoseRotation();
+  }
+
+  // === HUD 2D: rotación según cámara ===
+  function getCameraYawRad() {
+    return Math.atan2(camera.position.x, camera.position.z);
+  }
+  function updateRoseRotation() {
+    if (!roseCanvas) return;
+    const yaw = getCameraYawRad();
+    roseCanvas.style.transform = `rotate(${(yaw * 180 / Math.PI)}deg)`;
+  }
+
+  // Globals
+  window.lastRecord = null;
+  window.profileLevels = null;
+  let arrowMeta = [];
+
+  // Helpers
+  function getBinMagDir(bin) {
+    if (!bin || typeof bin !== 'object') return { mag: 0, deg: 0 };
+    const mag = Number(bin.Magnitude ?? bin.magnitude ?? 0);
+    let deg   = Number(bin.Direction ?? bin.direction ?? 0);
+    if (!isFinite(mag) || !isFinite(deg)) return { mag: 0, deg: 0 };
+    deg = (deg % 360 + 360) % 360;
+    return { mag, deg };
+  }
+  function degToDir3D(deg) {
+    const rad = deg * Math.PI / 180;
+    const x = Math.sin(rad);
+    const z = Math.cos(rad);
+    return new THREE.Vector3(x, 0, z).normalize();
+  }
+  function degToCompass8(deg) {
+    const labels = ['N','NE','E','SE','S','SW','W','NW'];
+    const idx = Math.round((deg % 360) / 45) % 8;
+    return labels[idx];
+  }
+
+  // 3 niveles
+  const levelsMeters = [5.0, 3.0, 1.0];
+  const levelsTextMeters = [2.0, 10.0, 19.0];
+
+  function pickProfileLevels(profileArr) {
+    if (!Array.isArray(profileArr) || profileArr.length === 0) return null;
+    const len = profileArr.length;
+    const surface = profileArr[len - 1];
+    const midIdx0 = Math.ceil(len / 2) - 1;
+    const mid = profileArr[midIdx0];
+    const deep = profileArr[0];
+    return { first: surface, mid, fiftyThree: deep, indices: { first: len, mid: midIdx0 + 1, fiftyThree: 1 } };
+  }
+
+  // =========================
+  //  ACTUALIZAR BOYA (flechas + tarjetas fijas)
+  // =========================
+  function actualizarBuoy() {
+    try {
+      alert('🔧 Iniciando actualizarBuoy()…');
+
+      // Limpiar anteriores
+      while (arrowsGroup.children.length) arrowsGroup.remove(arrowsGroup.children[0]);
+      while (disksGroup.children.length)  disksGroup.remove(disksGroup.children[0]);
+      const prevFixed = document.getElementById('fixedTagsContainer');
+      if (prevFixed) prevFixed.remove();
+      arrowMeta = [];
+
+      const profile = window.profileLevels;
+      if (!profile) {
+        alert('⚠️ No hay profileLevels. ¿lastRecord.Profile venía vacío?');
+        drawRose([]);
+        return;
+      }
+
+      const pv = [
+        { bin: profile.first,       idx: profile.indices?.first ?? 53, depthMeters: levelsMeters[0], color: 0xff0000 },
+        { bin: profile.mid,         idx: profile.indices?.mid ?? 27,   depthMeters: levelsMeters[1], color: 0xffa500 },
+        { bin: profile.fiftyThree,  idx: profile.indices?.fiftyThree ?? 1, depthMeters: levelsMeters[2], color: 0x00ff00 }
+      ];
+
+      alert(`📊 Bins seleccionados -> #${pv[0].idx}, #${pv[1].idx}, #${pv[2].idx}`);
+
+      pv.forEach((entry, i) => {
+        const { mag, deg } = getBinMagDir(entry.bin);
+        const depthMeters = entry.depthMeters;
+        const depthTextMeters = levelsTextMeters[i];
+
+        alert(`➡️ Bin #${entry.idx}: Mag=${mag.toFixed(3)}, Dir=${deg.toFixed(0)}°, Prof=${depthMeters} m`);
+
+        const disk = new THREE.Mesh(
+          new THREE.CircleGeometry(0.7, 64),
+          new THREE.MeshBasicMaterial({ color: 0x007bff, opacity: 0.2, transparent: true, side: THREE.DoubleSide })
+        );
+        disk.rotation.x = -Math.PI / 2;
+        disk.position.set(0, depthMeters, 0);
+        disksGroup.add(disk);
+
+        const dir3D = degToDir3D(deg);
+        const gain = 6.0, minLen = 0.35, maxLen = 5.0;
+        const length = Math.min(maxLen, Math.max(minLen, mag * gain));
+
+        const origin = new THREE.Vector3(0, depthMeters, 0);
+        const arrow = new THREE.ArrowHelper(dir3D, origin, length, entry.color, 0.3, 0.15);
+        arrowsGroup.add(arrow);
+
+        const compass = degToCompass8(deg);
+
+        arrowMeta.push({
+          originLocal: origin.clone(),
+          dirLocal: dir3D.clone(),
+          length,
+          azimuthDeg: deg,
+          compass,
+          magnitude: mag,
+          idx: entry.idx,
+          depth: depthMeters,
+          depthTextMeters
+        });
+      });
+
+      // === Tarjetas tipo counter: columna fija a la derecha ===
+      const fixedTagsContainer = document.createElement('div');
+      fixedTagsContainer.id = 'fixedTagsContainer';
+      Object.assign(fixedTagsContainer.style, {
+        position: 'absolute',
+        top: '50%',
+transform: 'translateY(-50%)',           // ajusta según tu header/counters
+        right: '16px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '12px',
+        zIndex: '30',
+        pointerEvents: 'none'   // evita capturar mouse sobre la escena
+      });
+      container.appendChild(fixedTagsContainer);
+
+   arrowMeta.forEach((meta, i) => {
+  const card = document.createElement('div');
+
+  // Fondo translúcido con color distintivo
+  const backgroundGradient = i === 0
+    ? 'linear-gradient(to bottom right, rgba(255,0,0,0.6), rgba(255,0,0,0.2))'
+    : i === 1
+      ? 'linear-gradient(to bottom right, rgba(255,165,0,0.6), rgba(255,165,0,0.2))'
+      : 'linear-gradient(to bottom right, rgba(0,255,0,0.6), rgba(0,255,0,0.2))';
+//
+  Object.assign(card.style, {
+    padding: '10px 16px',
+    backgroundImage: backgroundGradient,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    border: '1px solid rgba(255, 255, 255, 0.2)',
+    borderRadius: '12px',
+    backdropFilter: 'blur(8px)',
+    WebkitBackdropFilter: 'blur(8px)',
+    color: '#fff',
+    fontSize: '13px',
+    fontWeight: '500',
+    fontFamily: 'system-ui, sans-serif',
+    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
+    whiteSpace: 'nowrap',
+    textAlign: 'left',
+    lineHeight: '1.5',
+    maxWidth: '220px',
+    pointerEvents: 'auto'
+  });
+
+  card.innerHTML = `
+    📍 <strong>Bin #${meta.idx}</strong>: ${meta.depthTextMeters} m<br>
+    Dir: ${meta.azimuthDeg.toFixed(0)}° (${meta.compass})<br>
+    Mag: ${meta.magnitude.toFixed(3)}
+  `;
+
+  fixedTagsContainer.appendChild(card);
+});
+
+
+      // 👉 Actualiza la rosa 2D con los 3 vectores
+      updateRoseFromArrowMeta();
+
+      alert('✅ actualizarBuoy() completado');
+    } catch (e) {
+      console.error(e);
+      alert('❌ Error en actualizarBuoy(): ' + e.message);
+    }
+  }
+
+  // Animación escena
+  const clock = new THREE.Clock();
+  function animate() {
+    requestAnimationFrame(animate);
+
+    const radius = 10;
+    camera.position.x = radius * Math.sin(targetRotationX) * Math.cos(targetRotationY);
+    camera.position.y = radius * Math.sin(targetRotationY);
+    camera.position.z = radius * Math.cos(targetRotationX) * Math.cos(targetRotationY);
+    camera.lookAt(0, 0, 0);
+
+    const pos = bubblesGeometry.attributes.position.array;
+    for (let i = 0; i < bubbleCount; i++) {
+      pos[i * 3 + 1] += 0.002 + Math.random() * 0.0015;
+      if (pos[i * 3 + 1] > 3) pos[i * 3 + 1] = -3;
+    }
+    bubblesGeometry.attributes.position.needsUpdate = true;
+
+    const time = clock.getElapsedTime();
+    const vertices = waterGeometry.attributes.position;
+    for (let i = 0; i < vertices.count; i++) {
+      const x = vertices.getX(i);
+      const wave = 0.1 * Math.sin(x * 3 + time * 3);
+      vertices.setZ(i, wave);
+    }
+    vertices.needsUpdate = true;
+    waterGeometry.computeVertexNormals();
+
+    buoyGroup.rotation.x = 0.05 * Math.sin(time * 2);
+    buoyGroup.rotation.y = 0;
+
+    updateRoseRotation();
+    renderer.render(scene, camera);
+  }
+  animate();
+
+  // Resize
+  window.addEventListener('resize', () => {
+    const w = container.clientWidth, h = container.clientHeight;
+    camera.aspect = w / h; camera.updateProjectionMatrix(); renderer.setSize(w, h);
+    resizeRoseCanvas();
+    updateRoseFromArrowMeta();
+    updateRoseRotation();
+  });
+
+  // Interacción mouse
+  container.addEventListener('mousedown', (e) => { isMouseDown = true; mouseX = e.clientX; mouseY = e.clientY; });
+  window.addEventListener('mouseup', () => { isMouseDown = false; });
+  window.addEventListener('mousemove', (e) => {
+    if (isMouseDown) {
+      const dx = e.clientX - mouseX; const dy = e.clientY - mouseY;
+      mouseX = e.clientX; mouseY = e.clientY;
+      targetRotationX += dx * 0.005; targetRotationY += dy * 0.005;
+      targetRotationY = Math.max(-Math.PI/2, Math.min(Math.PI/2, targetRotationY));
+    }
+  });
+
+  // =========================
+  //  TABLA + CARGA DE REGISTROS
+  // =========================
+  let registros = [];
+  let currentPage = 1;
+  const rowsPerPage = 10;
+
+  async function cargarRegistros() {
+    console.log('📦 Iniciando carga de registros...');
+    alert('📦 Iniciando carga de registros...');
+
+    try {
+      const response = await fetch('/registros');
+      console.log('✅ Respuesta recibida del backend');
+      alert('✅ Respuesta recibida del backend');
+
+      const data = await response.json();
+      console.log(`🔢 Total de registros recibidos: ${data.length}`);
+      alert(`🔢 Total de registros recibidos: ${data.length}`);
+
+      window.lastRecord = (Array.isArray(data) && data.length) ? data[data.length - 1] : null;
+
+      if (window.lastRecord?.Profile) {
+        window.profileLevels = pickProfileLevels(window.lastRecord.Profile);
+
+        console.log('👉 Último n_registro:', window.lastRecord?.n_registro);
+        console.log('👉 Profile superficie (#' + window.profileLevels?.indices?.first + '):', window.profileLevels?.first);
+        console.log('👉 Profile mitad (#' + window.profileLevels?.indices?.mid + '):', window.profileLevels?.mid);
+        console.log('👉 Profile fondo (#' + window.profileLevels?.indices?.fiftyThree + '):', window.profileLevels?.fiftyThree);
+
+        actualizarBuoy();
+      } else {
+        window.profileLevels = null;
+        console.warn('⚠️ El último registro no contiene Profile válido.');
+        alert('⚠️ El último registro no contiene Profile válido.');
+        drawRose([]);
+      }
+
+      registros = data.slice(-780).reverse();
+      currentPage = 1;
+      mostrarPagina(currentPage);
+      actualizarBotonesPaginacion();
+      console.log('✅ Registros cargados en la tabla');
+      alert('✅ Registros cargados en la tabla');
+
+      const ultimosRegistros = registros.slice(0, 144).reverse();
+      const labels = ultimosRegistros.map(r => {
+        const ts = r.Timestamp;
+        return `${String(ts.Hour).padStart(2, '0')}:${String(ts.Minute).padStart(2, '0')}`;
+      });
+
+      const dataHs = ultimosRegistros.map(r => r.Hs ?? 0);
+      const dataTp = ultimosRegistros.map(r => r.Tp ?? 0);
+      const dataDepth = ultimosRegistros.map(r => {
+        const raw = r.Depth;
+        return (typeof raw === 'number') ? (raw / 1000) - 19 : 0;
+      });
+
+      actualizarGraficos(labels, dataHs, dataTp, dataDepth);
+
+    } catch (error) {
+      console.error('❌ Error al cargar los registros:', error);
+      alert('❌ Error al cargar los registros: ' + error.message);
+      drawRose([]);
+    }
+  }
+
+  function mostrarPagina(page) {
+    const tbody = document.querySelector('#tabla-registros tbody');
+    if (!tbody) {
+      console.error('❌ No se encontró la tabla en el DOM');
+      alert('❌ No se encontró la tabla en el DOM');
+      return;
+    }
+    tbody.innerHTML = '';
+
+    const start = (page - 1) * rowsPerPage;
+    const end = start + rowsPerPage;
+    const pageItems = registros.slice(start, end);
+
+    pageItems.forEach((registro, i) => {
+      const ts = registro.Timestamp;
+      const fecha = `${ts.Day}-${ts.Month}-${ts.Year}`;
+      const hora = `${ts.Hour}:${ts.Minute}`;
+      const hs = registro.Hs ?? '–';
+      const tp = registro.Tp ?? '–';
+      const dp = registro.Dp ?? '–';
+      const depthRaw = registro.Depth;
+      const depth = (typeof depthRaw === 'number') ? ((depthRaw / 1000) - 19).toFixed(2) : '–';
+      const nRegistro = registro.n_registro ?? '–';
+
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${nRegistro}</td>
+        <td>${fecha}</td>
+        <td>${hora}</td>
+        <td>${hs}</td>
+        <td>${tp}</td>
+        <td>${dp}</td>
+        <td>${depth}</td>
+      `;
+      tbody.appendChild(row);
+    });
+
+    document.getElementById('pageInfo').textContent = `Página ${page} de ${Math.ceil(registros.length / rowsPerPage)}`;
+  }
+
+  function actualizarBotonesPaginacion() {
+    const totalPages = Math.ceil(registros.length / rowsPerPage);
+    document.getElementById('prevPage').disabled = currentPage <= 1;
+    document.getElementById('nextPage').disabled = currentPage >= totalPages;
+  }
+
+  document.getElementById('prevPage').addEventListener('click', () => {
+    if (currentPage > 1) {
+      currentPage--; mostrarPagina(currentPage); actualizarBotonesPaginacion();
+    }
+  });
+  document.getElementById('nextPage').addEventListener('click', () => {
+    const totalPages = Math.ceil(registros.length / rowsPerPage);
+    if (currentPage < totalPages) {
+      currentPage++; mostrarPagina(currentPage); actualizarBotonesPaginacion();
+    }
+  });
+
+  // Init
+  document.addEventListener('DOMContentLoaded', () => {
+    console.log('📄 DOM completamente cargado');
+    initCharts();
+    cargarRegistros();
+  });
+</script>

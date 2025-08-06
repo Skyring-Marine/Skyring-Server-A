@@ -1,0 +1,132 @@
+
+instalar virtual box
+
+crear maquina vitual linux 
+
+instalar en maquina virtual not yes 
+
+despues ver en git hub 
+
+con eso estamos en condiciones de probar codigos
+
+vientos 
+loggerlink celular 
+
+
+
+user Skyring
+pass Root135!
+
+host name  Skyring
+
+
+github
+
+nombre Skyring-Marine
+pass Skyring135!
+
+
+
+
+
+
+
+
+
+
+
+
+Jefe Departamento Servicios a Terceros
+Capitán de Corbeta Sr. Luis Olea Lizana
+Servicio Hidrográfico y Oceanográfico de la Armada de Chile
+SHOA
+Presente
+
+omar 
+
+
+carlos palma 
+cpalma@comdiel.cl
+
+
+sfp   
+
+entrada de fibra LC 
+
+  77024SJ  (1)
+  77024SK  (1)
+
+https://www.comdiel.cl/modulo-sfp-wdm-monomodo-125gbps-lc-tx1550-rx1310-20km?source_impresee=a8jgr9i73cm9vxeabt6utugn9r
+https://www.comdiel.cl/modulo-sfp-wdm-monomodo-125gbps-lc-tx1310-rx1550-60km?source_impresee=3n3xyyrngrk399gvfjjnea59j5
+https://www.comdiel.cl/conversor-de-medios-101001000-1-puerto-sfp-a-rj45?source_impresee=tgvtpgkze3e8kti8g24q6ahukt
+
+
+conversor de medios
+77024 cg (2)
+
+
+
+
+Jefe Departamento Servicios a Terceros
+Servicio Hidrográfico y Oceanográfico de la Armada de Chile
+Capitán de Corbeta Luis Olea Lizana
+
+
+
+git hub 
+
+usuario Skyring-Marine
+pass Github1234$
+
+
+192.168.219.146  ip mv
+
+192.168.219.54  ip windows
+
+
+
+23 mayo
+
+C:\Users\Asus\AppData\Local\Programs\mongosh\
+
+
+{
+  "message": "6 devices",
+  "data": {
+    "devices": [
+      {
+        "name": "SKKYRINGMARINE-1625",
+        "spotterId": "SPOT-1625"
+      },
+      {
+        "name": "Skyring ENAP QTRO",
+        "spotterId": "SPOT-1690"
+      },
+      {
+        "name": "SKYRING-ENAP-MONO",
+        "spotterId": "SPOT-31342C"
+      },
+      {
+        "name": "SKYRING-TMSV",
+        "spotterId": "SPOT-31324C"
+      },
+      {
+        "name": "SKYRING-MONOBYA 2",
+        "spotterId": "SPOT-31948C"
+      },
+      {
+        "name": "YPFB",
+        "spotterId": "SPOT-32394C"
+      }
+    ]
+  }
+}
+
+
+
+25 mayo 
+
+C:\Users\Asus\AppData\Local\Programs\mongosh\
+
+curl "https://api.sofarocean.com/api/latest-data?spotterId=SPOT-32394C" -H "token: 33cff5adb2e7b17b773dbfa8f7c20a"
+

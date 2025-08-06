@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="">
+  <meta name="author" content="">
+  <link rel="icon" href="https://getbootstrap.com/docs/4.0/assets/img/favicons/favicon.ico">
+
+  <title>Wave Monitoring System</title>
+
+  <link href="./index_files/bootstrap.min.css" rel="stylesheet">
+  <link href="./index_files/cover.css" rel="stylesheet">
+
+  <style>
+    body {
+      background-image: url('/images/mar.jpg');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-color: rgba(255, 255, 255, 0.13);
+      background-blend-mode: lighten;
+    }
+
+    .logo-img {
+      width: 450px;
+      height: auto;
+      margin-bottom: 20px;
+    }
+
+    .section-content {
+      margin-top: 50px;
+    }
+
+    .cover-heading {
+      color: #fff;
+      text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.4);
+      margin-bottom: 20px;
+    }
+
+    .login-card {
+      background: rgba(255, 255, 255, 0.9);
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.3);
+      max-width: 300px;
+      margin: 20px auto;
+    }
+  </style>
+</head>
+
+<body class="text-center">
+
+<div class="cover-container d-flex h-100 p-3 mx-auto flex-column justify-content-start">
+  <header class="masthead mb-auto">
+    <div class="inner">
+      <h3 class="masthead-brand"></h3>
+      <nav class="nav nav-masthead justify-content-center">
+        <a class="nav-link active" href="#">Home</a>
+        <a class="nav-link" href="#">Features</a>
+        <a class="nav-link" href="#">Contact</a>
+      </nav>
+    </div>
+  </header>
+
+  <main role="main" class="inner cover">
+    
+    <section class="section-content" id="content-section">
+      <img src="/images/logo.png" alt="Logo de la empresa" class="logo-img">
+      <h1 class="cover-heading">Wave Monitoring System</h1>
+      <p class="lead">
+        <a href="#" class="btn btn-lg btn-secondary" id="login-btn">Login</a>
+      </p>
+    </section>
+
+    <!-- Aquí aparecerá el login form -->
+
+  </main>
+
+  <footer class="mastfoot mt-auto">
+    <div class="inner">
+      <p>Cover template for <a href="https://getbootstrap.com/">Bootstrap</a>, by <a href="https://twitter.com/mdo">@mdo</a>.</p>
+    </div>
+  </footer>
+</div>
+
+<script src="./index_files/jquery-3.2.1.slim.min.js"></script>
+<script src="./index_files/popper.min.js"></script>
+<script src="./index_files/bootstrap.min.js"></script>
+
+<!-- (código anterior sin cambios)... -->
+
+<script>
+  document.getElementById('login-btn').addEventListener('click', function (e) {
+    e.preventDefault();
+
+    // Ocultamos solo el botón
+    document.getElementById('login-btn').style.display = 'none';
+
+    // Creamos el formulario dentro de un card
+    const section = document.getElementById('content-section');
+    const cardDiv = document.createElement('div');
+    cardDiv.className = 'login-card';
+
+    cardDiv.innerHTML = `
+      <h5 class="mb-3"></h5>
+      <form>
+        <div class="form-group">
+          <input type="text" class="form-control" placeholder="Username">
+        </div>
+        <div class="form-group">
+          <input type="password" class="form-control" placeholder="Password">
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Submit</button>
+      </form>
+    `;
+
+    section.appendChild(cardDiv);
+
+    // Redirige directamente al dashboard.html al enviar el formulario
+    cardDiv.querySelector('form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      window.location.href = 'dashboard.html';
+    });
+  });
+</script>
+
+
+</body>
+</html>

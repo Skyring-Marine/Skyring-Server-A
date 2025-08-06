@@ -1,0 +1,82 @@
+<!-- Izquierda: Buoy3D (ocupa 50%) -->
+<div style="width: 50%; padding-right: 20px; height: 100%;">
+  <canvas id="buoyCanvas" style="width: 100%; height: 100%; display: block;"></canvas>
+</div>
+
+<!-- Three.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.min.js"></script>
+
+<script>
+  const canvas = document.getElementById('buoyCanvas');
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+  renderer.setPixelRatio(window.devicePixelRatio);
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x001e2b);
+
+  const camera = new THREE.PerspectiveCamera(45, canvas.clientWidth / canvas.clientHeight, 0.1, 100);
+  camera.position.set(5, 5, 7);
+  camera.lookAt(0, 1, 0);
+
+  const light = new THREE.PointLight(0xffffff, 1);
+  light.position.set(10, 10, 10);
+  scene.add(light);
+  scene.add(new THREE.AmbientLight(0x404040));
+
+  const buoyGroup = new THREE.Group();
+
+  const sphere = new THREE.Mesh(
+    new THREE.SphereGeometry(0.5, 32, 32),
+    new THREE.MeshPhongMaterial({ color: 0xff4444 })
+  );
+  sphere.position.y = 0.5;
+  buoyGroup.add(sphere);
+
+  const mast = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.05, 0.05, 1.5, 16),
+    new THREE.MeshPhongMaterial({ color: 0xffff00 })
+  );
+  mast.position.y = 1.5;
+  buoyGroup.add(mast);
+
+  scene.add(buoyGroup);
+
+  const levels = [1.0, 1.6, 2.2];
+  const directions = [
+    new THREE.Vector2(1, 0.5),
+    new THREE.Vector2(0.8, -0.7),
+    new THREE.Vector2(-1.2, 0.3)
+  ];
+  const colors = [0xff0000, 0xffa500, 0x00ff00];
+
+  levels.forEach((y, i) => {
+    const disk = new THREE.Mesh(
+      new THREE.CircleGeometry(0.7, 64),
+      new THREE.MeshBasicMaterial({ color: 0x007bff, opacity: 0.2, transparent: true, side: THREE.DoubleSide })
+    );
+    disk.rotation.x = -Math.PI / 2;
+    disk.position.set(0, y, 0);
+    scene.add(disk);
+
+    const dir2D = directions[i].normalize();
+    const dir3D = new THREE.Vector3(dir2D.x, 0, dir2D.y);
+    const origin = new THREE.Vector3(0, y, 0);
+    const arrow = new THREE.ArrowHelper(dir3D, origin, 1, colors[i], 0.2, 0.1);
+    scene.add(arrow);
+  });
+
+  function animate() {
+    requestAnimationFrame(animate);
+    buoyGroup.rotation.y += 0.01;
+    buoyGroup.rotation.x = 0.05 * Math.sin(Date.now() * 0.001);
+    renderer.render(scene, camera);
+  }
+  animate();
+
+  window.addEventListener('resize', () => {
+    renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+    camera.aspect = canvas.clientWidth / canvas.clientHeight;
+    camera.updateProjectionMatrix();
+  });
+</script>
