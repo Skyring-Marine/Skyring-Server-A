@@ -223,7 +223,9 @@
   // =========================
   //  THREE.JS - ESCENA
   // =========================
-  let isMouseDown = false, mouseX = 0, mouseY = 0, targetRotationX = 0, targetRotationY = 0;
+ let isMouseDown = false, mouseX = 0, mouseY = 0;
+let targetRotationX = Math.PI / 3;  // 45° horizontal
+let targetRotationY = Math.PI / 6;  // 30° vertical
   const container = document.getElementById('buoyContainer');
   if (getComputedStyle(container).position === 'static') container.style.position = 'relative';
 
@@ -231,8 +233,8 @@
   scene.background = new THREE.Color(0x001D3D);
 
   const camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 1000);
-  camera.position.set(5, 3, 7);
-  camera.lookAt(0, 0, 0);
+  camera.position.set(6, 6, 6);  // Más alto y oblicuo
+camera.lookAt(0, 0, 0);
 
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   renderer.setSize(container.clientWidth, container.clientHeight);
@@ -253,6 +255,46 @@
   oceanFloor.position.y = -3;
   scene.add(oceanFloor);
 
+
+const dashedLinesGroup = new THREE.Group();
+scene.add(dashedLinesGroup);
+
+function createDashedLineAtY(yPosition) {
+  const directions = [
+    new THREE.Vector3(0, 0, 1),   // Norte (+Z)
+    new THREE.Vector3(0, 0, -1),  // Sur (−Z)
+    new THREE.Vector3(1, 0, 0),   // Este (+X)
+    new THREE.Vector3(-1, 0, 0)   // Oeste (−X)
+  ];
+
+  const group = new THREE.Group(); // Agrupa las 4 líneas
+
+  directions.forEach(dir => {
+    const start = new THREE.Vector3(0, yPosition, 0);
+    const end = start.clone().add(dir.multiplyScalar(3)); // 3 unidades hacia la dirección
+
+    const geometry = new THREE.BufferGeometry().setFromPoints([start, end]);
+    const material = new THREE.LineDashedMaterial({
+      color: 0xffffff,
+      linewidth: 1,
+      scale: 1,
+      dashSize: 0.2,
+      gapSize: 0.1
+    });
+
+    const line = new THREE.Line(geometry, material);
+    line.computeLineDistances(); // Importante para líneas punteadas
+    group.add(line);
+  });
+
+  return group;
+}
+
+
+
+
+
+
   const waterGeometry = new THREE.PlaneGeometry(6, 6, 20, 20);
   const waterMaterial = new THREE.MeshPhongMaterial({
     color: 0x1E90FF, transparent: true, opacity: 0.6, side: THREE.DoubleSide, shininess: 100, flatShading: true
@@ -262,33 +304,49 @@
   water.position.y = 3;
   scene.add(water);
 
-  // === Marca de Norte (N) con Sprite 2D ===
-  let northSprite;
-  function addNorthMarker() {
-    const size = 256;
-    const cvs = document.createElement('canvas');
-    const ctx = cvs.getContext('2d');
-    cvs.width = cvs.height = size;
-    ctx.clearRect(0, 0, size, size);
-    ctx.font = 'bold 180px Helvetica, Arial, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.shadowColor = 'rgba(0,0,0,0.4)';
-    ctx.shadowBlur = 8;
-    ctx.shadowOffsetX = 0;
-    ctx.shadowOffsetY = 2;
-    ctx.fillStyle = '#ffffff';
-    ctx.fillText('N', size / 2, size / 2);
-    const tex = new THREE.CanvasTexture(cvs);
-    tex.needsUpdate = true;
-    const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false });
-    northSprite = new THREE.Sprite(mat);
-    const worldScale = 1.2;
-    northSprite.scale.set(worldScale, worldScale, 1);
-    northSprite.position.set(0, 0, -3.4);
-    scene.add(northSprite);
-  }
-  addNorthMarker();
+function createCardinalSprite(letter, positionVec3) {
+  const size = 256;
+  const cvs = document.createElement('canvas');
+  const ctx = cvs.getContext('2d');
+  cvs.width = cvs.height = size;
+  ctx.clearRect(0, 0, size, size);
+
+  // 🔁 Inversión de Z para alinear con sistema marítimo
+  const angleRad = Math.atan2(positionVec3.x, -positionVec3.z);
+  let angleDeg = angleRad * 180 / Math.PI;
+  angleDeg = (angleDeg + 360) % 360;
+
+  // Texto y grados
+  ctx.font = 'bold 180px Helvetica, Arial, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.shadowColor = 'rgba(0,0,0,0.4)';
+  ctx.shadowBlur = 8;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 2;
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText(letter, size / 2, size / 2);
+
+  ctx.font = 'bold 36px Helvetica, Arial, sans-serif';
+  ctx.fillStyle = '#aaffff';
+  ctx.fillText(`${angleDeg.toFixed(1)}°`, size / 2, size / 2 + 100);
+
+  const tex = new THREE.CanvasTexture(cvs);
+  tex.needsUpdate = true;
+  const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false });
+  const sprite = new THREE.Sprite(mat);
+
+  const worldScale = 1.2;
+  sprite.scale.set(worldScale, worldScale, 1);
+  sprite.position.copy(positionVec3);
+  scene.add(sprite);
+
+  console.log(`🧭 Sprite "${letter}" creado en dirección ${angleDeg.toFixed(1)}°`);
+}
+createCardinalSprite('N', new THREE.Vector3(0, 0, -3.4)); // Z− ahora es Norte
+createCardinalSprite('E', new THREE.Vector3(3.4, 0, 0));  // X+ es Este
+createCardinalSprite('S', new THREE.Vector3(0, 0, 3.4));  // Z+ es Sur
+createCardinalSprite('O', new THREE.Vector3(-3.4, 0, 0)); // X− es Oeste
 
   // Burbujas
   const bubbleCount = 50;
@@ -358,7 +416,49 @@
 
       roseHud.appendChild(roseCanvas);
       container.appendChild(roseHud);
+const freezeContainer = document.createElement('div');
+Object.assign(freezeContainer.style, {
+  position: 'absolute',
+  bottom: '12px',
+  left: 'calc(12px + 160px + 8px)',
+  height: '160px',
+  display: 'flex',
+  alignItems: 'flex-end',
+  pointerEvents: 'auto',
+  zIndex: '40'
+});
 
+// Wrapper interno para alineación más precisa
+const freezeWrapper = document.createElement('div');
+Object.assign(freezeWrapper.style, {
+  display: 'flex',
+  alignItems: 'center',
+  background: 'rgba(255,255,255,0.05)',
+  padding: '6px 10px',
+  borderRadius: '8px',
+  color: '#fff',
+  fontSize: '14px',
+  fontFamily: 'system-ui, sans-serif',
+  backdropFilter: 'blur(6px)',
+  boxShadow: '0 2px 6px rgba(0,0,0,0.25)'
+});
+
+const freezeCheckbox = document.createElement('input');
+freezeCheckbox.type = 'checkbox';
+freezeCheckbox.id = 'freezeCheckbox';
+freezeCheckbox.style.margin = '0 6px 0 0';
+freezeCheckbox.style.transform = 'scale(1.1)'; // Opcional: agranda un poco
+
+const freezeLabel = document.createElement('label');
+freezeLabel.htmlFor = 'freezeCheckbox';
+freezeLabel.textContent = 'Centrar';
+freezeLabel.style.lineHeight = '1';
+freezeLabel.style.display = 'inline-block';
+
+freezeWrapper.appendChild(freezeCheckbox);
+freezeWrapper.appendChild(freezeLabel);
+freezeContainer.appendChild(freezeWrapper);
+container.appendChild(freezeContainer);
       roseCtx = roseCanvas.getContext('2d');
       resizeRoseCanvas();
     }
@@ -406,11 +506,11 @@
     roseCtx.textAlign = 'center';
     roseCtx.textBaseline = 'middle';
     roseCtx.fillStyle = '#dfe9ff';
-    roseCtx.fillText('N', cx, cy - R + 10);
-    roseCtx.fillText('S', cx, cy + R - 10);
-    roseCtx.fillText('E', cx + R - 10, cy);
-    roseCtx.fillText('O', cx - R + 10, cy);
-
+    // Corrección de letras cardinales: N arriba, S abajo, O derecha, E izquierda
+roseCtx.fillText('S', cx, cy - R + 10); 
+roseCtx.fillText('N', cx, cy + R - 10);
+roseCtx.fillText('O', cx + R - 10, cy);  // Oeste a la derecha
+roseCtx.fillText('E', cx - R + 10, cy);  // Este a la izquierda
     const MAG_TO_RADIUS = 0.9;
     function drawArrow(rad, mag, colorHex) {
       const color = '#' + colorHex.toString(16).padStart(6,'0');
@@ -467,7 +567,7 @@
   function updateRoseRotation() {
     if (!roseCanvas) return;
     const yaw = getCameraYawRad();
-    roseCanvas.style.transform = `rotate(${(yaw * 180 / Math.PI)}deg)`;
+ roseCanvas.style.transform = `rotate(${(yaw * 180 / Math.PI + 180)}deg)`;
   }
 
   // Globals
@@ -484,12 +584,16 @@
     deg = (deg % 360 + 360) % 360;
     return { mag, deg };
   }
+
+
   function degToDir3D(deg) {
-    const rad = deg * Math.PI / 180;
-    const x = Math.sin(rad);
-    const z = Math.cos(rad);
-    return new THREE.Vector3(x, 0, z).normalize();
-  }
+  const rad = deg * Math.PI / 180;
+  const x = Math.sin(rad);
+  const z = -Math.cos(rad); // ← corregido: Z invertido
+  return new THREE.Vector3(x, 0, z).normalize();
+}
+
+
   function degToCompass8(deg) {
     const labels = ['N','NE','E','SE','S','SW','W','NW'];
     const idx = Math.round((deg % 360) / 45) % 8;
@@ -555,7 +659,7 @@
         disksGroup.add(disk);
 
         const dir3D = degToDir3D(deg);
-        const gain = 6.0, minLen = 0.35, maxLen = 5.0;
+        const gain = 15.0, minLen = 0.35, maxLen = 5.0;
         const length = Math.min(maxLen, Math.max(minLen, mag * gain));
 
         const origin = new THREE.Vector3(0, depthMeters, 0);
@@ -635,7 +739,20 @@ transform: 'translateY(-50%)',           // ajusta según tu header/counters
 
       // 👉 Actualiza la rosa 2D con los 3 vectores
       updateRoseFromArrowMeta();
+// Elimina líneas anteriores si existen
+while (dashedLinesGroup.children.length) {
+  dashedLinesGroup.remove(dashedLinesGroup.children[0]);
+}
 
+// Crea línea blanca punteada hacia el norte para cada profundidad
+arrowMeta.forEach(meta => {
+  const line = createDashedLineAtY(meta.depth);
+  dashedLinesGroup.add(line);
+});
+
+
+// 👇 Aquí va la línea que las baja
+dashedLinesGroup.position.y = -3.0;
       alert('✅ actualizarBuoy() completado');
     } catch (e) {
       console.error(e);
