@@ -6,28 +6,34 @@ const { MongoClient } = require('mongodb');
 const multer = require('multer');
 const { exec } = require('child_process');
 
-
-
-
 const hostname = '10.31.212.212';
 const port = 3000;
 const url = 'mongodb://3.134.98.196:27017';
 const dbName = 'myproject';
 let db;
 
-
 const carpetaTransferencia = path.join(__dirname, 'transferencia2');
 const carpetaUploads = path.join(__dirname, 'uploads');
 const archivoObjetivo = 'WAVES_002_000_TS2508180458_LOG8_verified.TXT';
 
-
-
 const app = express();
 
+// ===========================
+// STATIC (ajuste de rutas)
+// ===========================
+// Mantiene el original (carpeta 'Public' con P mayúscula)
 app.use(express.static(path.join(__dirname, 'Public')));
+
+// 🔧 Soporte alterno si en la VM la carpeta es 'public' en minúsculas
+app.use(express.static(path.join(__dirname, 'public')));
+
 // ✅ Solo añadimos el servido de imágenes y recursos front
 app.use('/index_files', express.static(path.join(__dirname, 'Public/index_files')));
 app.use('/images', express.static(path.join(__dirname, 'Public/images')));
+
+// 🔧 Montajes espejo por si existen en minúsculas en la VM
+app.use('/index_files', express.static(path.join(__dirname, 'public/index_files')));
+app.use('/images', express.static(path.join(__dirname, 'public/images')));
 
 // Mantienes todo lo que ya tenías
 const storage = multer.diskStorage({
@@ -49,6 +55,10 @@ MongoClient.connect(url, { useNewUrlParser: true, useUnifiedTopology: true })
     })
     .catch(err => console.error('❌ Error de conexión a MongoDB:', err));
 
+// ===========================
+// RUTAS
+// ===========================
+
 // Ruta principal
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'Public/index.html'));
@@ -57,6 +67,20 @@ app.get('/', (req, res) => {
 // Ruta opcional para Cover anterior
 app.get('/cover', (req, res) => {
     res.sendFile(path.join(__dirname, 'Cover Template for Bootstrap.html'));
+});
+
+// 🔧 Ruta explícita para dashboard (cubre /dashboard y /dashboard.html)
+// Busca primero en Public/, luego en Public/pages/, y en minúsculas si aplica
+app.get(['/dashboard', '/dashboard.html'], (req, res) => {
+    const candidatos = [
+        path.join(__dirname, 'Public', 'dashboard.html'),
+        path.join(__dirname, 'Public', 'pages', 'dashboard.html'),
+        path.join(__dirname, 'public', 'dashboard.html'),
+        path.join(__dirname, 'public', 'pages', 'dashboard.html'),
+    ];
+    const destino = candidatos.find(p => fs.existsSync(p));
+    if (destino) return res.sendFile(destino);
+    return res.status(404).send('dashboard.html no encontrado en Public/ ni en public/');
 });
 
 // Ruta para upload
