@@ -185,9 +185,31 @@ fs.watch(carpetaUploads, (eventType, filename) => {
                         return;
                     }
 
-                    db.collection('registros').insertOne(doc)
-                        .then(() => console.log(`✅ Registro ${doc.n_registro} insertado correctamente en MongoDB`))
-                        .catch(err => console.error(`❌ Error insertando en MongoDB registro ${doc.n_registro}:`, err));
+                const key = {
+  n_registro: doc.n_registro,
+  "Timestamp.Year": doc.Timestamp.Year,
+  "Timestamp.Month": doc.Timestamp.Month,
+  "Timestamp.Day": doc.Timestamp.Day,
+  "Timestamp.Hour": doc.Timestamp.Hour,
+  "Timestamp.Minute": doc.Timestamp.Minute,
+  "Timestamp.Second": doc.Timestamp.Second,
+  "Timestamp.Centisecond": doc.Timestamp.Centisecond
+};
+
+// 🧷 Upsert idempotente: inserta si no existe; si existe, NO reescribe nada
+db.collection('registros').updateOne(
+  key,
+  { $setOnInsert: doc },
+  { upsert: true, writeConcern: { w: "majority" } }
+)
+.then(r => {
+  if (r.upsertedCount === 1) {
+    console.log(`✅ Registro ${doc.n_registro} insertado (nuevo)`);
+  } else {
+    console.log(`↔️ Registro ${doc.n_registro} ya existía; no se modificó`);
+  }
+})
+.catch(err => console.error(`❌ Error upsert registro ${doc.n_registro}:`, err));
                 });
 
                 console.log(`✅ Proceso completo. Esperando nuevos archivos...`);
