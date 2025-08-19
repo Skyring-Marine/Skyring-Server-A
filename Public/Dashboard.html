@@ -10,6 +10,7 @@
   <link rel="canonical" href="https://getbootstrap.com/docs/4.0/examples/dashboard/">
   <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://getbootstrap.com/docs/4.0/examples/dashboard/dashboard.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css">
 
   <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>
@@ -123,26 +124,60 @@
         <!-- Izquierda: Buoy3D -->
         <div id="buoyContainer" style="width: 50%; padding-right: 20px; height: 100%;">
           <div id="dashboard" class="hud">
-            <div class="card blue"><div class="icon">🌊</div><div class="num">12</div><div class="label">Hs(m)</div></div>
-         
-<div class="card red">
-  <div class="icon">
-    <img src="images/icono-ola.png" alt="Icono de ola" width="32" height="32">
-  </div>
-  <div class="num">599</div>
-  <div class="label">Tp(s)</div>
+           <div class="card blue">
+  <div class="icon">🌊</div>
+  <div class="num" id="hsValue">--</div>
+  <div class="label">Hs (m)</div>
 </div>
-            <div class="card green"><div class="icon">💽</div><div class="num">6875</div><div class="label">Dir Dp(°)</div></div>
-            <div class="card cyan"><div class="icon">👥</div><div class="num">35</div><div class="label">Alt(m MRS)</div></div>
+
+<div class="card red">
+  <div class="icon">⏱️</div>
+  <div class="num" id="tpValue">--</div>
+  <div class="label">Tp (s)</div>
+</div>
+
+<div class="card green">
+  <div class="icon">🧭</div>
+  <div class="num" id="dirValue">--</div>
+  <div class="label">Dir (°)</div>
+</div>
+
+<div class="card cyan">
+  <div class="icon">📏</div>
+  <div class="num" id="depValue">--</div>
+  <div class="label">Dep (m)</div>
+</div>
           </div>
         </div>
 
-        <!-- Derecha: Charts -->
-        <div class="d-flex flex-column" style="width: 50%; height: 100%; gap: 0;">
-          <canvas id="chart1" style="height: 33%; margin-bottom: 0;"></canvas>
-          <canvas id="chart2" style="height: 33%; margin-bottom: 0;"></canvas>
-          <canvas id="chart3" style="height: 34%; margin-bottom: 0;"></canvas>
-        </div>
+<!-- Derecha: Charts -->
+<div class="d-flex flex-column" style="width: 50%; height: 100%; gap: 0;">
+  <canvas id="chart1" style="height: 33%; margin-bottom: 0;"></canvas>
+  <canvas id="chart2" style="height: 33%; margin-bottom: 0;"></canvas>
+  <canvas id="chart3" style="height: 34%; margin-bottom: 0;"></canvas>
+
+  <!-- Slider (parte en máximo) -->
+  <input 
+    type="range" 
+    id="chartSlider" 
+    min="1" max="100" value="100"
+    style="margin-top: 10px; width: 100%;">
+
+  <!-- Botones de zoom -->
+  <div class="d-flex justify-content-center" style="margin-top: 10px; gap: 10px;">
+    <button id="zoomIn" class="btn btn-sm btn-secondary">
+      <i class="bi bi-zoom-in"></i> <!-- Lupa + -->
+    </button>
+    <button id="zoomOut" class="btn btn-sm btn-secondary">
+      <i class="bi bi-zoom-out"></i> <!-- Lupa - -->
+    </button>
+  </div>
+</div>
+
+
+
+
+
       </div>
 
       <h2 class="mt-4">Últimos Registros</h2>
@@ -177,58 +212,121 @@
   //  CHARTS
   // =========================
   let freezeBoya = false;
+let chart1, chart2, chart3;
+let highlightIndex = null; // índice resaltado actual
 
+function initCharts() {
+  chart1 = new Chart(document.getElementById('chart1'), {
+    type: 'line',
+    data: {
+      labels: Array(77).fill(0).map((_,i)=>"P"+(i+1)),
+      datasets: [{
+        label: "HS (M)",
+        data: Array(77).fill(0),
+        borderColor: "#007bff",
+        backgroundColor: "rgba(0,123,255,0.2)",
+        tension: 0.4,
+        fill: true
+      }]
+    },
+    options: baseChartOptions('ALTURA DE OLA SIGNIFICATIVA HS (M)')
+  });
 
-  let chart1, chart2, chart3;
+  chart2 = new Chart(document.getElementById('chart2'), {
+    type: 'line',
+    data: {
+      labels: chart1.data.labels,
+      datasets: [{
+        label: "PERIODO PEAK (S)",
+        data: Array(77).fill(0),
+        borderColor: "#28a745",
+        backgroundColor: "rgba(40,167,69,0.2)",
+        tension: 0.4,
+        fill: true
+      }]
+    },
+    options: baseChartOptions('PERIODO PEAK (S)')
+  });
 
-  function initCharts() {
-    chart1 = new Chart(document.getElementById('chart1'), {
-      type: 'line',
-      data: {
-        labels: ["14:00","14:05","14:10","14:15","14:20","14:25","14:30","14:35","14:40","14:45","14:50"],
-        datasets: [{ label: "HS (M)", data: Array(11).fill(0),
-          borderColor: "#007bff", backgroundColor: "rgba(0,123,255,0.2)", tension: 0.4, fill: true }]
-      },
-      options: baseChartOptions('ALTURA DE OLA SIGNIFICATIVA HS (M)')
-    });
+  chart3 = new Chart(document.getElementById('chart3'), {
+    type: 'line',
+    data: {
+      labels: chart1.data.labels,
+      datasets: [{
+        label: "ALTURA DE MAREA (M)",
+        data: Array(77).fill(0),
+        borderColor: "#dc3545",
+        backgroundColor: "rgba(220,53,69,0.2)",
+        tension: 0.4,
+        fill: true
+      }]
+    },
+    options: baseChartOptions('ALTURA DE MAREA (M NRS)')
+  });
 
-    chart2 = new Chart(document.getElementById('chart2'), {
-      type: 'line',
-      data: {
-        labels: ["14:00","14:05","14:10","14:15","14:20","14:25","14:30","14:35","14:40","14:45","14:50"],
-        datasets: [{ label: "PERIODO PEAK (S)", data: Array(11).fill(0),
-          borderColor: "#28a745", backgroundColor: "rgba(40,167,69,0.2)", tension: 0.4, fill: true }]
-      },
-      options: baseChartOptions('PERIODO PEAK (S)')
-    });
+  // --- Slider por índice (0..N-1), arranca en el último ---
+  const slider = document.getElementById("chartSlider");
+  const total = chart1.data.datasets[0].data.length;
+  slider.min = 0;
+  slider.max = total - 1;
+  slider.step = 1;
+  slider.value = slider.max;        // empieza “a full”
+  highlightIndex = Number(slider.value);
 
-    chart3 = new Chart(document.getElementById('chart3'), {
-      type: 'line',
-      data: {
-        labels: ["14:00","14:05","14:10","14:15","14:20","14:25","14:30","14:35","14:40","14:45","14:50"],
-        datasets: [{ label: "ALTURA DE MAREA (M)", data: Array(11).fill(0),
-          borderColor: "#dc3545", backgroundColor: "rgba(220,53,69,0.2)", tension: 0.4, fill: true }]
-      },
-      options: baseChartOptions('ALTURA DE MAREA (M NRS)')
-    });
-  }
+  slider.addEventListener("input", () => {
+    // Mueves hacia atrás: 76, 75, 74… (con max=último, min=0)
+    highlightIndex = Number(slider.value);
+    updateCharts();
+  });
+}
 
-  function baseChartOptions(title) {
-    return {
-      responsive: true,
-      plugins: { legend: { display: false }, title: { display: true, text: title, font: { size: 16, weight: 'bold' }, color: '#fff' } },
-      scales: {
-        y: { beginAtZero: true, min: 0, ticks: { color: '#eee' }, grid: { color: 'rgba(255,255,255,0.1)' } },
-        x: { ticks: { color: '#eee' }, grid: { color: 'rgba(255,255,255,0.1)' } }
+function baseChartOptions(title) {
+  return {
+    responsive: true,
+    plugins: {
+      legend: { display: false },
+      title: { display: true, text: title, font: { size: 16, weight: 'bold' }, color: '#fff' }
+    },
+    elements: {
+      point: {
+        radius: (ctx) => (ctx.dataIndex === highlightIndex ? 7 : 3),
+        backgroundColor: (ctx) => (ctx.dataIndex === highlightIndex ? '#ffffff' : ctx.dataset.borderColor),
+        borderColor: (ctx) => ctx.dataset.borderColor,
+        borderWidth: (ctx) => (ctx.dataIndex === highlightIndex ? 2 : 1)
       }
-    };
-  }
+    },
+    scales: {
+      y: { beginAtZero: true, min: 0, ticks: { color: '#eee' }, grid: { color: 'rgba(255,255,255,0.1)' } },
+      x: { ticks: { color: '#eee' }, grid: { color: 'rgba(255,255,255,0.1)' } }
+    }
+  };
+}
 
-  function actualizarGraficos(labels, dataHs, dataTp, dataDepth) {
-    chart1.data.labels = labels; chart1.data.datasets[0].data = dataHs; chart1.update();
-    chart2.data.labels = labels; chart2.data.datasets[0].data = dataTp; chart2.update();
-    chart3.data.labels = labels; chart3.data.datasets[0].data = dataDepth; chart3.update();
-  }
+function updateCharts() {
+  chart1.update();
+  chart2.update();
+  chart3.update();
+}
+
+// Si cambias los datos dinámicamente, mantén el slider sincronizado:
+function actualizarGraficos(labels, dataHs, dataTp, dataDepth) {
+  chart1.data.labels = labels; chart1.data.datasets[0].data = dataHs;
+  chart2.data.labels = labels; chart2.data.datasets[0].data = dataTp;
+  chart3.data.labels = labels; chart3.data.datasets[0].data = dataDepth;
+
+  const slider = document.getElementById("chartSlider");
+  const total = dataHs.length; // todos comparten longitud
+  slider.min = 0;
+  slider.max = total - 1;
+  slider.step = 1;
+  // al cargar nuevos datos, vuelve a “full” (último)
+  slider.value = slider.max;
+  highlightIndex = Number(slider.value);
+
+  chart1.update(); chart2.update(); chart3.update();
+}
+
+
 
   // =========================
   //  THREE.JS - ESCENA
@@ -1013,6 +1111,15 @@ if (!freezeBoya) {
     }
   });
 
+
+// 🌍 Variables globales para el último registro
+let lastHs = null;
+let lastTp = null;
+let lastDir = null;
+let lastDep = null;
+
+
+
   // =========================
   //  TABLA + CARGA DE REGISTROS
   // =========================
@@ -1035,6 +1142,26 @@ if (!freezeBoya) {
 
       window.lastRecord = (Array.isArray(data) && data.length) ? data[data.length - 1] : null;
 
+if (window.lastRecord) {
+  // Guarda valores globales
+  lastHs  = window.lastRecord.Hs ?? null;
+  lastTp  = window.lastRecord.Tp ?? null;
+  lastDir = window.lastRecord.Dp ?? window.lastRecord.Dmean ?? null;
+  lastDep = window.lastRecord.Depth ?? null;
+
+  console.log("🌊 Hs (m):", lastHs);
+  console.log("⏱️ Tp (s):", lastTp);
+  console.log("🧭 Dir (°):", lastDir);
+  console.log("📏 Dep (m):", lastDep);
+
+    // ✅ Actualizar tarjetas
+  document.getElementById("hsValue").textContent  = lastHs ?? "--";
+  document.getElementById("tpValue").textContent  = lastTp ?? "--";
+  document.getElementById("dirValue").textContent = lastDir ?? "--";
+  document.getElementById("depValue").textContent = lastDep ?? "--";
+
+
+}
       if (window.lastRecord?.Profile) {
         window.profileLevels = pickProfileLevels(window.lastRecord.Profile);
 
@@ -1142,6 +1269,8 @@ if (!freezeBoya) {
   document.addEventListener('DOMContentLoaded', () => {
     console.log('📄 DOM completamente cargado');
     initCharts();
+
+    
     cargarRegistros();
   });
 </script>

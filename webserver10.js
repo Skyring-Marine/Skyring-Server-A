@@ -6,11 +6,16 @@ const { MongoClient } = require('mongodb');
 const multer = require('multer');
 const { exec } = require('child_process');
 
-const hostname = '172.31.39.213';
+const hostname = '10.2.43.179';
 const port = 3000;
-const url = 'mongodb://172.31.39.213:27017';
+const url = 'mongodb://3.134.98.196:27017';
 const dbName = 'myproject';
 let db;
+
+
+// 🌍 Variable global para almacenar el último registro
+let ultimoRegistro = null;
+
 
 const carpetaTransferencia = path.join(__dirname, 'transferencia2');
 const carpetaUploads = path.join(__dirname, 'uploads');
@@ -221,15 +226,34 @@ db.collection('registros').updateOne(
     }, 2000);
 });
 
-// Ruta para consultar registros en MongoDB
 app.get('/registros', async (req, res) => {
     try {
-        console.log('📥 Ruta /registros consultada'); // 👈 Línea agregada
+        console.log('📥 Ruta /registros consultada');
+
         const registros = await db.collection('registros')
                                   .find({})
-                                  .sort({ n_registro: 1 })  // opcional: orden por número de registro
+                                  .sort({ n_registro: 1 })
                                   .toArray();
+
+        // ⬇️ obtenemos el último registro directamente desde Mongo
+        const ultimo = await db.collection('registros')
+                               .findOne({}, { sort: { n_registro: -1 } });
+
+      if (ultimo) {
+    ultimoRegistro = ultimo; // lo guardamos en variable global
+
+    console.log('🆕 Último registro actualizado:');
+    console.log(`   🔢 n_registro: ${ultimoRegistro.n_registro}`);
+    console.log(`   🌊 Hs (m): ${ultimoRegistro.Hs}`);
+    console.log(`   ⏱️ Tp (s): ${ultimoRegistro.Tp}`);
+    console.log(`   🧭 Dir (°): ${ultimoRegistro.Dp}`);   // o Dmean si prefieres la dirección media
+    console.log(`   📏 Dep (m): ${ultimoRegistro.Depth}`);
+} else {
+            console.log('⚠️ No hay registros en la base de datos.');
+        }
+
         res.json(registros);
+
     } catch (err) {
         console.error('❌ Error al obtener registros:', err);
         res.status(500).send('Error al obtener los registros de MongoDB');
