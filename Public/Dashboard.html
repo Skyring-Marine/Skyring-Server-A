@@ -211,9 +211,24 @@
   // =========================
   //  CHARTS
   // =========================
+
+
   let freezeBoya = false;
+
+
+
+
+
+
 let chart1, chart2, chart3;
-let highlightIndex = null; // índice resaltado actual
+let highlightIndex = 0;           // índice global del punto resaltado (en los datos completos)
+let viewStart = 0, viewEnd = 0;   // ventana visible [start, end] en datos completos
+let zoomLevel = 0;                // 0 = vista completa, 1..N = zoom creciente
+
+// Copias de los datos completos
+let fullLabels = [];
+let fullHs = [], fullTp = [], fullDepth = [];
+
 
 function initCharts() {
   chart1 = new Chart(document.getElementById('chart1'), {
@@ -225,8 +240,7 @@ function initCharts() {
         data: Array(77).fill(0),
         borderColor: "#007bff",
         backgroundColor: "rgba(0,123,255,0.2)",
-        tension: 0.4,
-        fill: true
+        tension: 0.4, fill: true
       }]
     },
     options: baseChartOptions('ALTURA DE OLA SIGNIFICATIVA HS (M)')
@@ -241,8 +255,7 @@ function initCharts() {
         data: Array(77).fill(0),
         borderColor: "#28a745",
         backgroundColor: "rgba(40,167,69,0.2)",
-        tension: 0.4,
-        fill: true
+        tension: 0.4, fill: true
       }]
     },
     options: baseChartOptions('PERIODO PEAK (S)')
@@ -257,28 +270,51 @@ function initCharts() {
         data: Array(77).fill(0),
         borderColor: "#dc3545",
         backgroundColor: "rgba(220,53,69,0.2)",
-        tension: 0.4,
-        fill: true
+        tension: 0.4, fill: true
       }]
     },
     options: baseChartOptions('ALTURA DE MAREA (M NRS)')
   });
 
-  // --- Slider por índice (0..N-1), arranca en el último ---
+  // Guardar copias completas
+  fullLabels = chart1.data.labels.slice();
+  fullHs     = chart1.data.datasets[0].data.slice();
+  fullTp     = chart2.data.datasets[0].data.slice();
+  fullDepth  = chart3.data.datasets[0].data.slice();
+
+  // Slider por índice (0..N-1), arrancar en el último
   const slider = document.getElementById("chartSlider");
-  const total = chart1.data.datasets[0].data.length;
-  slider.min = 0;
-  slider.max = total - 1;
-  slider.step = 1;
-  slider.value = slider.max;        // empieza “a full”
+  const total = fullLabels.length;
+  slider.min = 0; slider.max = total - 1; slider.step = 1; slider.value = slider.max;
   highlightIndex = Number(slider.value);
 
   slider.addEventListener("input", () => {
-    // Mueves hacia atrás: 76, 75, 74… (con max=último, min=0)
     highlightIndex = Number(slider.value);
-    updateCharts();
+    applyZoom(); // redibuja respetando zoom actual
   });
+
+  // Ventana inicial = vista completa
+  viewStart = 0; viewEnd = total - 1;
+  applyZoom();
+
+  // Botones de zoom (añade estos IDs en tu HTML)
+  const btnIn  = document.getElementById('zoomIn');
+  const btnOut = document.getElementById('zoomOut');
+
+  if (btnIn) {
+    btnIn.addEventListener('click', () => {
+      zoomLevel = Math.min(10, zoomLevel + 1); // tope 10 niveles
+      applyZoom();
+    });
+  }
+  if (btnOut) {
+    btnOut.addEventListener('click', () => {
+      zoomLevel = Math.max(0, zoomLevel - 1);
+      applyZoom();
+    });
+  }
 }
+
 
 function baseChartOptions(title) {
   return {
@@ -289,10 +325,10 @@ function baseChartOptions(title) {
     },
     elements: {
       point: {
-        radius: (ctx) => (ctx.dataIndex === highlightIndex ? 7 : 3),
-        backgroundColor: (ctx) => (ctx.dataIndex === highlightIndex ? '#ffffff' : ctx.dataset.borderColor),
+        radius: (ctx) => ((ctx.dataIndex + viewStart) === highlightIndex ? 7 : 3),
+        backgroundColor: (ctx) => ((ctx.dataIndex + viewStart) === highlightIndex ? 'yellow' : ctx.dataset.borderColor),
         borderColor: (ctx) => ctx.dataset.borderColor,
-        borderWidth: (ctx) => (ctx.dataIndex === highlightIndex ? 2 : 1)
+        borderWidth: (ctx) => ((ctx.dataIndex + viewStart) === highlightIndex ? 2 : 1)
       }
     },
     scales: {
@@ -302,6 +338,46 @@ function baseChartOptions(title) {
   };
 }
 
+
+
+function applyZoom() {
+  const total = fullLabels.length;
+
+  // Asegurar highlightIndex dentro de rango por si cambió el total
+  if (highlightIndex > total - 1) highlightIndex = total - 1;
+  if (highlightIndex < 0) highlightIndex = 0;
+
+  if (zoomLevel === 0) {
+    viewStart = 0; viewEnd = total - 1;
+  } else {
+    const span = Math.max(5, Math.floor(total / (2 ** zoomLevel))); // ancho de ventana
+    let half  = Math.floor(span / 2);
+
+    let s = highlightIndex - half;
+    let e = s + span - 1;
+
+    if (s < 0) { s = 0; e = Math.min(total - 1, s + span - 1); }
+    if (e > total - 1) { e = total - 1; s = Math.max(0, e - span + 1); }
+
+    viewStart = s; viewEnd = e;
+  }
+
+  // Aplicar recorte a los 3 charts
+  const L = fullLabels.slice(viewStart, viewEnd + 1);
+  chart1.data.labels = L;
+  chart2.data.labels = L;
+  chart3.data.labels = L;
+
+  chart1.data.datasets[0].data = fullHs.slice(viewStart, viewEnd + 1);
+  chart2.data.datasets[0].data = fullTp.slice(viewStart, viewEnd + 1);
+  chart3.data.datasets[0].data = fullDepth.slice(viewStart, viewEnd + 1);
+
+  chart1.update(); chart2.update(); chart3.update();
+}
+
+
+
+
 function updateCharts() {
   chart1.update();
   chart2.update();
@@ -310,20 +386,22 @@ function updateCharts() {
 
 // Si cambias los datos dinámicamente, mantén el slider sincronizado:
 function actualizarGraficos(labels, dataHs, dataTp, dataDepth) {
-  chart1.data.labels = labels; chart1.data.datasets[0].data = dataHs;
-  chart2.data.labels = labels; chart2.data.datasets[0].data = dataTp;
-  chart3.data.labels = labels; chart3.data.datasets[0].data = dataDepth;
+  // Actualizar copias completas
+  fullLabels = labels.slice();
+  fullHs = dataHs.slice();
+  fullTp = dataTp.slice();
+  fullDepth = dataDepth.slice();
 
+  // Reconfigurar slider y highlight
   const slider = document.getElementById("chartSlider");
-  const total = dataHs.length; // todos comparten longitud
   slider.min = 0;
-  slider.max = total - 1;
+  slider.max = fullLabels.length - 1;
   slider.step = 1;
-  // al cargar nuevos datos, vuelve a “full” (último)
-  slider.value = slider.max;
+  slider.value = slider.max;           // ir al último al recargar datos
   highlightIndex = Number(slider.value);
 
-  chart1.update(); chart2.update(); chart3.update();
+  // Reiniciar ventana con zoom actual alrededor del nuevo highlight
+  applyZoom();
 }
 
 
@@ -1195,7 +1273,7 @@ if (window.lastRecord) {
       const dataTp = ultimosRegistros.map(r => r.Tp ?? 0);
       const dataDepth = ultimosRegistros.map(r => {
         const raw = r.Depth;
-        return (typeof raw === 'number') ? (raw / 1000) - 19 : 0;
+        return (typeof raw === 'number') ? (raw / 1000) - 20 : 0;
       });
 
       actualizarGraficos(labels, dataHs, dataTp, dataDepth);
@@ -1270,7 +1348,7 @@ if (window.lastRecord) {
     console.log('📄 DOM completamente cargado');
     initCharts();
 
-    
+
     cargarRegistros();
   });
 </script>

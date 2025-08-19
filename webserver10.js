@@ -6,7 +6,7 @@ const { MongoClient } = require('mongodb');
 const multer = require('multer');
 const { exec } = require('child_process');
 
-const hostname = '10.2.43.179';
+const hostname = '172.31.39.213';
 const port = 3000;
 const url = 'mongodb://3.134.98.196:27017';
 const dbName = 'myproject';
@@ -19,7 +19,7 @@ let ultimoRegistro = null;
 
 const carpetaTransferencia = path.join(__dirname, 'transferencia2');
 const carpetaUploads = path.join(__dirname, 'uploads');
-const archivoObjetivo = 'WAVES_002_000_TS2508180458_LOG8_verified.TXT';
+const archivoObjetivo = 'WAVES_004_000_TS2508180458_LOG8_verified.TXT';
 
 const app = express();
 
