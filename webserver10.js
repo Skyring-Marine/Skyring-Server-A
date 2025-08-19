@@ -9,7 +9,7 @@ const { exec } = require('child_process');
 
 
 
-const hostname = '10.31.212.230';
+const hostname = '10.31.212.212';
 const port = 3000;
 const url = 'mongodb://3.134.98.196:27017';
 const dbName = 'myproject';
@@ -18,7 +18,7 @@ let db;
 
 const carpetaTransferencia = path.join(__dirname, 'transferencia2');
 const carpetaUploads = path.join(__dirname, 'uploads');
-const archivoObjetivo = 'WAVES_000_000_LOG8_verified.TXT';
+const archivoObjetivo = 'WAVES_002_000_TS2508180458_LOG8_verified.TXT';
 
 
 

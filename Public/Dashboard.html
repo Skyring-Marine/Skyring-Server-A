@@ -123,10 +123,17 @@
         <!-- Izquierda: Buoy3D -->
         <div id="buoyContainer" style="width: 50%; padding-right: 20px; height: 100%;">
           <div id="dashboard" class="hud">
-            <div class="card blue"><div class="icon">🛠️</div><div class="num">12</div><div class="label">Filtros</div></div>
-            <div class="card red"><div class="icon">💳</div><div class="num">599</div><div class="label">Instancias</div></div>
-            <div class="card green"><div class="icon">💽</div><div class="num">6875</div><div class="label">Datos</div></div>
-            <div class="card cyan"><div class="icon">👥</div><div class="num">35</div><div class="label">Usuarios</div></div>
+            <div class="card blue"><div class="icon">🌊</div><div class="num">12</div><div class="label">Hs(m)</div></div>
+         
+<div class="card red">
+  <div class="icon">
+    <img src="images/icono-ola.png" alt="Icono de ola" width="32" height="32">
+  </div>
+  <div class="num">599</div>
+  <div class="label">Tp(s)</div>
+</div>
+            <div class="card green"><div class="icon">💽</div><div class="num">6875</div><div class="label">Dir Dp(°)</div></div>
+            <div class="card cyan"><div class="icon">👥</div><div class="num">35</div><div class="label">Alt(m MRS)</div></div>
           </div>
         </div>
 
@@ -261,8 +268,9 @@ camera.lookAt(0, 0, 0);
 
 const dashedLinesGroup = new THREE.Group();
 
-
+if (freezeBoya) {
 scene.add(dashedLinesGroup);
+}
 
 function createDashedLineAtY(yPosition) {
   const directions = [
@@ -726,6 +734,24 @@ roseCtx.fillText('E', cx - R + 10, cy);  // Este a la izquierda
 if (freezeBoya) {
   const ARC_Y_OFFSET = 3;
 
+  // Reusar grupo si existe; si no, crearlo limpio
+  let azimuthArcsGroup = scene.getObjectByName('azimuthArcsGroup');
+  if (azimuthArcsGroup) {
+    // si existía, lo limpiamos por si venimos de otro ciclo
+    azimuthArcsGroup.traverse(obj => {
+      if (obj.isLine) { obj.geometry.dispose(); obj.material.dispose(); }
+      if (obj.isSprite) {
+        if (obj.material.map) obj.material.map.dispose();
+        obj.material.dispose();
+      }
+    });
+    azimuthArcsGroup.clear();
+  } else {
+    azimuthArcsGroup = new THREE.Group();
+    azimuthArcsGroup.name = 'azimuthArcsGroup';
+    scene.add(azimuthArcsGroup);
+  }
+
   arrowMeta.forEach((meta) => {
     const radius = 0.7;
     const segments = 32;
@@ -755,7 +781,7 @@ if (freezeBoya) {
 
     const arcLine = new THREE.Line(arcGeometry, arcMaterial);
     arcLine.computeLineDistances();
-    scene.add(arcLine);
+    azimuthArcsGroup.add(arcLine); // <-- agrupar arco
 
     const midDeg = meta.azimuthDeg / 2;
     const midRad = THREE.MathUtils.degToRad(midDeg);
@@ -778,18 +804,46 @@ if (freezeBoya) {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
-    ctx.strokeText(`${meta.azimuthDeg.toFixed(0)}°`, canvas.width / 2, canvas.height / 2);
-    ctx.fillText(`${meta.azimuthDeg.toFixed(0)}°`, canvas.width / 2, canvas.height / 2);
+    const text = `${meta.azimuthDeg.toFixed(0)}°`;
+    ctx.strokeText(text, canvas.width / 2, canvas.height / 2);
+    ctx.fillText(text, canvas.width / 2, canvas.height / 2);
 
     const texture = new THREE.CanvasTexture(canvas);
     const material = new THREE.SpriteMaterial({ map: texture, transparent: true, depthWrite: false });
     const sprite = new THREE.Sprite(material);
     sprite.scale.set(1.5, 0.75, 1);
     sprite.position.copy(labelPos);
-    scene.add(sprite);
-  });
-}
 
+    azimuthArcsGroup.add(sprite); // <-- agrupar etiqueta también
+  });
+
+  // Asegurar en escena (si no estaba)
+  if (!scene.children.includes(azimuthArcsGroup)) {
+    scene.add(azimuthArcsGroup);
+  }
+
+  scene.add(dashedLinesGroup);
+
+} else {
+  // Eliminar dashedLinesGroup
+  if (scene.children.includes(dashedLinesGroup)) {
+    scene.remove(dashedLinesGroup);
+  }
+
+  // Eliminar grupo de arcos y liberar recursos
+  const azimuthArcsGroup = scene.getObjectByName('azimuthArcsGroup');
+  if (azimuthArcsGroup) {
+    azimuthArcsGroup.traverse(obj => {
+      if (obj.isLine) { obj.geometry.dispose(); obj.material.dispose(); }
+      if (obj.isSprite) {
+        if (obj.material.map) obj.material.map.dispose();
+        obj.material.dispose();
+      }
+    });
+    scene.remove(azimuthArcsGroup);
+    azimuthArcsGroup.clear();
+  }
+}
 
 
 
