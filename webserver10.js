@@ -6,9 +6,9 @@ const { MongoClient } = require('mongodb');
 const multer = require('multer');
 const { exec } = require('child_process');
 
-const hostname = '10.31.212.212';
+const hostname = '172.31.39.213';
 const port = 3000;
-const url = 'mongodb://3.134.98.196:27017';
+const url = 'mongodb://172.31.39.213:27017';
 const dbName = 'myproject';
 let db;
 
@@ -71,16 +71,16 @@ app.get('/cover', (req, res) => {
 
 // 🔧 Ruta explícita para dashboard (cubre /dashboard y /dashboard.html)
 // Busca primero en Public/, luego en Public/pages/, y en minúsculas si aplica
-app.get(['/dashboard', '/dashboard.html'], (req, res) => {
+app.get(['/dashboard', '/Dashboard.html'], (req, res) => {
     const candidatos = [
-        path.join(__dirname, 'Public', 'dashboard.html'),
-        path.join(__dirname, 'Public', 'pages', 'dashboard.html'),
-        path.join(__dirname, 'public', 'dashboard.html'),
-        path.join(__dirname, 'public', 'pages', 'dashboard.html'),
+        path.join(__dirname, 'Public', 'Dashboard.html'),
+        path.join(__dirname, 'Public', 'pages', 'Dashboard.html'),
+        path.join(__dirname, 'public', 'Dashboard.html'),
+        path.join(__dirname, 'public', 'pages', 'Dashboard.html'),
     ];
     const destino = candidatos.find(p => fs.existsSync(p));
     if (destino) return res.sendFile(destino);
-    return res.status(404).send('dashboard.html no encontrado en Public/ ni en public/');
+    return res.status(404).send('Dashboard.html no encontrado en Public/ ni en public/');
 });
 
 // Ruta para upload
