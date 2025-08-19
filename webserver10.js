@@ -19,7 +19,7 @@ let ultimoRegistro = null;
 
 const carpetaTransferencia = path.join(__dirname, 'transferencia2');
 const carpetaUploads = path.join(__dirname, 'uploads');
-const archivoObjetivo = 'WAVES_004_000_TS2508180458_LOG8_verified.TXT';
+const archivoObjetivo = 'WAVES_004_000_TS2508190040_LOG8_verified.TXT';
 
 const app = express();
 
