@@ -1095,11 +1095,11 @@ transform: 'translateY(-50%)',           // ajusta según tu header/counters
     pointerEvents: 'auto'
   });
 
-  card.innerHTML = `
-    📍 <strong>Bin #${meta.idx}</strong>: ${meta.depthTextMeters} m<br>
-    Dir: ${meta.azimuthDeg.toFixed(0)}° (${meta.compass})<br>
-    Mag: ${meta.magnitude.toFixed(3)*2}
-  `;
+ card.innerHTML = `
+  📍 <strong>Bin #${meta.idx}</strong>: ${meta.depthTextMeters} m<br>
+  Dir: ${meta.azimuthDeg.toFixed(0)}° (${meta.compass})<br>
+  Mag: ${(meta.magnitude * 2).toFixed(3)}
+`;
 
   fixedTagsContainer.appendChild(card);
 });
