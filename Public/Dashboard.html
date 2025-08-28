@@ -1230,7 +1230,7 @@ if (window.lastRecord) {
   console.log("🌊 Hs (m):", lastHs);
   console.log("⏱️ Tp (s):", lastTp);
   console.log("🧭 Dir (°):", lastDir);
-  console.log("📏 Dep (m):", lastDep);
+  console.log("📏 Dep (m):", (lastDep/1000)-20);
 
     // ✅ Actualizar tarjetas
   document.getElementById("hsValue").textContent  = lastHs ?? "--";
