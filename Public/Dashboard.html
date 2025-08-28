@@ -1098,7 +1098,7 @@ transform: 'translateY(-50%)',           // ajusta según tu header/counters
   card.innerHTML = `
     📍 <strong>Bin #${meta.idx}</strong>: ${meta.depthTextMeters} m<br>
     Dir: ${meta.azimuthDeg.toFixed(0)}° (${meta.compass})<br>
-    Mag: ${meta.magnitude.toFixed(3)}
+    Mag: ${meta.magnitude.toFixed(3)*2}
   `;
 
   fixedTagsContainer.appendChild(card);
