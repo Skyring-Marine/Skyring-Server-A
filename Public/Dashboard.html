@@ -834,7 +834,7 @@ roseCtx.fillText('E', cx - R + 10, cy);  // Este a la izquierda
   // =========================
   function actualizarBuoy() {
     try {
-      alert('🔧 Iniciando actualizarBuoy()…');
+      //alert('🔧 Iniciando actualizarBuoy()…');
 
       // Limpiar anteriores
       while (arrowsGroup.children.length) arrowsGroup.remove(arrowsGroup.children[0]);
@@ -856,14 +856,14 @@ roseCtx.fillText('E', cx - R + 10, cy);  // Este a la izquierda
         { bin: profile.fiftyThree,  idx: profile.indices?.fiftyThree ?? 1, depthMeters: levelsMeters[2], color: 0x00ff00 }
       ];
 
-      alert(`📊 Bins seleccionados -> #${pv[0].idx}, #${pv[1].idx}, #${pv[2].idx}`);
+      //alert(`📊 Bins seleccionados -> #${pv[0].idx}, #${pv[1].idx}, #${pv[2].idx}`);
 
       pv.forEach((entry, i) => {
         const { mag, deg } = getBinMagDir(entry.bin);
         const depthMeters = entry.depthMeters;
         const depthTextMeters = levelsTextMeters[i];
 
-        alert(`➡️ Bin #${entry.idx}: Mag=${mag.toFixed(3)}, Dir=${deg.toFixed(0)}°, Prof=${depthMeters} m`);
+       // alert(`➡️ Bin #${entry.idx}: Mag=${mag.toFixed(3)}, Dir=${deg.toFixed(0)}°, Prof=${depthMeters} m`);
 
         const disk = new THREE.Mesh(
           new THREE.CircleGeometry(0.7, 64),
@@ -1095,10 +1095,10 @@ transform: 'translateY(-50%)',           // ajusta según tu header/counters
     pointerEvents: 'auto'
   });
 
- card.innerHTML = `
+card.innerHTML = `
   📍 <strong>Bin #${meta.idx}</strong>: ${meta.depthTextMeters} m<br>
   Dir: ${meta.azimuthDeg.toFixed(0)}° (${meta.compass})<br>
-  Mag: ${(meta.magnitude * 2).toFixed(3)}
+  Mag: ${(meta.magnitude * 2).toFixed(3)} (kn)
 `;
 
   fixedTagsContainer.appendChild(card);
@@ -1121,7 +1121,7 @@ arrowMeta.forEach(meta => {
 
 // 👇 Aquí va la línea que las baja
 dashedLinesGroup.position.y = -3.0;
-      alert('✅ actualizarBuoy() completado');
+      //alert('✅ actualizarBuoy() completado');
     } catch (e) {
       console.error(e);
       alert('❌ Error en actualizarBuoy(): ' + e.message);
@@ -1212,7 +1212,7 @@ let lastDep = null;
     try {
       const response = await fetch('/registros');
       console.log('✅ Respuesta recibida del backend');
-      alert('✅ Respuesta recibida del backend');
+     // alert('✅ Respuesta recibida');
 
       const data = await response.json();
       console.log(`🔢 Total de registros recibidos: ${data.length}`);
@@ -1259,7 +1259,7 @@ if (window.lastRecord) {
       mostrarPagina(currentPage);
       actualizarBotonesPaginacion();
       console.log('✅ Registros cargados en la tabla');
-      alert('✅ Registros cargados en la tabla');
+      //alert('✅ Registros cargados en la tabla');
 
       const ultimosRegistros = registros.slice(0, 144).reverse();
       const labels = ultimosRegistros.map(r => {
