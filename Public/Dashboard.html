@@ -1236,7 +1236,7 @@ if (window.lastRecord) {
   document.getElementById("hsValue").textContent  = lastHs  ?? "--";
   document.getElementById("tpValue").textContent  = lastTp  ?? "--";
   document.getElementById("dirValue").textContent = lastDir ?? "--";
-  document.getElementById("depValue").textContent = lastDep != null ? ((lastDep / 1000) - 20).toFixed(2) : "--";
+  document.getElementById("depValue").textContent = lastDep != null ? ((lastDep / 1000) - 19).toFixed(2) : "--";
 }
       if (window.lastRecord?.Profile) {
         window.profileLevels = pickProfileLevels(window.lastRecord.Profile);
