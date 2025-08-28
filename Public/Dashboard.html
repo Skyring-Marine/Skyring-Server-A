@@ -1236,7 +1236,7 @@ if (window.lastRecord) {
   document.getElementById("hsValue").textContent  = lastHs ?? "--";
   document.getElementById("tpValue").textContent  = lastTp ?? "--";
   document.getElementById("dirValue").textContent = lastDir ?? "--";
- const depTransformada = (typeof lastDep === 'number') ? (lastDep / 100 - 20).toFixed(2) : "--";
+ const depTransformada = (typeof lastDep === 'number') ? (lastDep / 1000 - 20).toFixed(2) : "--";
 document.getElementById("depValue").textContent = depTransformada;
 
 
