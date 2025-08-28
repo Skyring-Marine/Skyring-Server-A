@@ -1230,15 +1230,13 @@ if (window.lastRecord) {
   console.log("🌊 Hs (m):", lastHs);
   console.log("⏱️ Tp (s):", lastTp);
   console.log("🧭 Dir (°):", lastDir);
-  console.log("📏 Dep (m):", (lastDep/1000)-20);
+  console.log("📏 Dep (m):", lastDep);
 
-    // ✅ Actualizar tarjetas
-  document.getElementById("hsValue").textContent  = lastHs ?? "--";
-  document.getElementById("tpValue").textContent  = lastTp ?? "--";
+  // ✅ Actualizar tarjetas
+  document.getElementById("hsValue").textContent  = lastHs  ?? "--";
+  document.getElementById("tpValue").textContent  = lastTp  ?? "--";
   document.getElementById("dirValue").textContent = lastDir ?? "--";
-  document.getElementById("depValue").textContent = lastDep ?? "--";
-
-
+  document.getElementById("depValue").textContent = lastDep != null ? ((lastDep / 1000) - 20).toFixed(2) : "--";
 }
       if (window.lastRecord?.Profile) {
         window.profileLevels = pickProfileLevels(window.lastRecord.Profile);
